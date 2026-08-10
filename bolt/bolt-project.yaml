@@ -1,0 +1,22 @@
+---
+name: control_repo_bolt
+
+# A list of module dependencies for the OpenBolt project.
+#
+# @see https://docs.openvoxproject.org/openbolt/latest/projects.html#using-modules-in-a-bolt-project
+modules: []
+
+# Exposes the control repo's site-modules and modules directories to OpenBolt.
+# This allows you to run plans that use modules in the control repo without needing to install them separately in the OpenBolt project.
+#
+# @see https://docs.openvoxproject.org/openbolt/latest/projects.html#configuring-a-project
+modulepath:
+  - site-modules
+  - modules
+  - ../site-modules
+  - ../modules
+
+# Path to the Hiera configuration file.
+#
+# @see https://docs.openvoxproject.org/openbolt/latest/projects.html#configuring-a-project
+hiera-config: ../hiera.yaml

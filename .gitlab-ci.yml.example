@@ -1,0 +1,38 @@
+stages:
+  - unit
+  - integration
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "production"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "production"'
+    - when: never
+
+.module-test:
+  image: ruby:3.2
+  before_script:
+    - cd "$WORKING_DIRECTORY"
+    - bundle install --jobs 4
+  script:
+    - bundle exec rake validate lint check rubocop
+    - bundle exec rake parallel_spec
+
+adhoc:
+  extends: .module-test
+  stage: unit
+  variables:
+    WORKING_DIRECTORY: ./site-modules/adhoc
+
+profiles:
+  extends: .module-test
+  stage: unit
+  variables:
+    WORKING_DIRECTORY: ./site-modules/profile
+
+roles:
+  extends: .module-test
+  stage: integration
+  needs:
+    - profiles
+  variables:
+    WORKING_DIRECTORY: ./site-modules/role

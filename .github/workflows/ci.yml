@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - production
+  pull_request:
+    branches:
+      - production
+
+permissions:
+  contents: read
+
+jobs:
+  control-repo:
+    name: Validate control repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install tools
+        run: gem install --no-document openvox r10k puppet-lint
+
+      - name: Check Puppetfile syntax
+        run: r10k puppetfile check
+
+      - name: Validate manifests
+        run: puppet parser validate manifests
+
+      - name: Lint manifests
+        run: puppet-lint --fail-on-warnings manifests
+
+      - name: Validate YAML files
+        run: |
+          ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f, aliases: true) }' \
+            hiera.yaml data/common.yaml data/nodes/*.yaml data/plan/*.yaml \
+            bolt/bolt-project.yaml bolt/inventory.yaml
+
+  adhoc:
+    name: Adhoc module
+    uses: ./.github/workflows/module-ci.yml
+    with:
+      working-directory: site-modules/adhoc
+
+  profile:
+    name: Profile module
+    uses: ./.github/workflows/module-ci.yml
+    with:
+      working-directory: site-modules/profile
+
+  role:
+    name: Role module
+    needs: profile
+    uses: ./.github/workflows/module-ci.yml
+    with:
+      working-directory: site-modules/role

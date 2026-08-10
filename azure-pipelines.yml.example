@@ -1,0 +1,62 @@
+trigger:
+  branches:
+    include:
+      - production
+
+pr:
+  branches:
+    include:
+      - production
+
+jobs:
+  - job: adhoc
+    displayName: Validate and Test Adhoc Tasks and Plans
+    pool:
+      vmImage: ubuntu-latest
+    container: ruby:3.2
+    steps:
+      - checkout: self
+      - script: bundle install --jobs 4
+        displayName: Install gems
+        workingDirectory: ./site-modules/adhoc
+      - script: bundle exec rake validate lint check rubocop
+        displayName: Validate
+        workingDirectory: ./site-modules/adhoc
+      - script: bundle exec rake parallel_spec
+        displayName: Unit tests
+        workingDirectory: ./site-modules/adhoc
+
+  - job: profiles
+    displayName: Validate and Test Profiles (Unit testing)
+    pool:
+      vmImage: ubuntu-latest
+    container: ruby:3.2
+    steps:
+      - checkout: self
+      - script: bundle install --jobs 4
+        displayName: Install gems
+        workingDirectory: ./site-modules/profile
+      - script: bundle exec rake validate lint check rubocop
+        displayName: Validate
+        workingDirectory: ./site-modules/profile
+      - script: bundle exec rake parallel_spec
+        displayName: Unit tests
+        workingDirectory: ./site-modules/profile
+
+  - job: roles
+    displayName: Validate and Test Roles (Integration testing)
+    dependsOn: profiles
+    pool:
+      vmImage: ubuntu-latest
+    container: ruby:3.2
+    steps:
+      - checkout: self
+      - script: bundle install --jobs 4
+        displayName: Install gems
+        workingDirectory: ./site-modules/role
+      - script: bundle exec rake validate lint check rubocop
+        displayName: Validate
+        workingDirectory: ./site-modules/role
+      - script: bundle exec rake parallel_spec
+        displayName: Unit tests
+        workingDirectory: ./site-modules/role

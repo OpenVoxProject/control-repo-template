@@ -1,0 +1,32 @@
+name: Module CI
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'Directory of the module to validate and test'
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Validate
+        run: bundle exec rake validate lint check rubocop
+
+      - name: Unit tests
+        run: bundle exec rake parallel_spec

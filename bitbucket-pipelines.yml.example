@@ -1,0 +1,44 @@
+image: ruby:3.2
+
+definitions:
+  steps:
+    - step: &test-adhoc
+        name: Validate and Test Adhoc Tasks and Plans
+        script:
+          - if [ -n "${BITBUCKET_PR_DESTINATION_BRANCH:-}" ] && [ "$BITBUCKET_PR_DESTINATION_BRANCH" != "production" ]; then echo "Skipping pull request not targeting production"; exit 0; fi
+          - cd site-modules/adhoc
+          - bundle install --jobs 4
+          - bundle exec rake validate lint check rubocop
+          - bundle exec rake parallel_spec
+    - step: &test-profiles
+        name: Validate and Test Profiles (Unit testing)
+        script:
+          - if [ -n "${BITBUCKET_PR_DESTINATION_BRANCH:-}" ] && [ "$BITBUCKET_PR_DESTINATION_BRANCH" != "production" ]; then echo "Skipping pull request not targeting production"; exit 0; fi
+          - cd site-modules/profile
+          - bundle install --jobs 4
+          - bundle exec rake validate lint check rubocop
+          - bundle exec rake parallel_spec
+    - step: &test-roles
+        name: Validate and Test Roles (Integration testing)
+        script:
+          - if [ -n "${BITBUCKET_PR_DESTINATION_BRANCH:-}" ] && [ "$BITBUCKET_PR_DESTINATION_BRANCH" != "production" ]; then echo "Skipping pull request not targeting production"; exit 0; fi
+          - cd site-modules/role
+          - bundle install --jobs 4
+          - bundle exec rake validate lint check rubocop
+          - bundle exec rake parallel_spec
+
+pipelines:
+  branches:
+    production:
+      - parallel:
+          steps:
+            - step: *test-adhoc
+            - step: *test-profiles
+      - step: *test-roles
+  pull-requests:
+    '**':
+      - parallel:
+          steps:
+            - step: *test-adhoc
+            - step: *test-profiles
+      - step: *test-roles
