@@ -27,9 +27,7 @@ Layout/LineLength:
   Max: 200
 RSpec/BeforeAfterAll:
   Description: Beware of using after(:all) as it may cause state to leak between tests.
-    A necessary evil in acceptance testing.
   Exclude:
-  - spec/acceptance/**/*.rb
   - spec/plans/**/*.rb
 RSpec/HookArgument:
   Description: Prefer explicit :each argument, matching existing module's style
