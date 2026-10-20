@@ -4,11 +4,16 @@ version: 5
 defaults:
   datadir: "data"
 
+# The roles level selects a data file by the node's pp_role certificate
+# extension, set in csr_attributes.yaml before the node's first run. That file
+# names the node's role class under the `classes` key, which manifests/site.pp
+# includes. See the README section "Classifying Nodes".
 hierarchy:
   - name: "YAML backend"
     data_hash: yaml_data
     paths:
       - "nodes/%{trusted.certname}.yaml"
+      - "roles/%{trusted.extensions.pp_role}.yaml"
       - "common.yaml"
 
 # Outside apply blocks, OpenBolt is essentially executing a script.
@@ -45,6 +50,9 @@ plan_hierarchy:
 #   - name: "Per-node data"
 #     paths:
 #       - "nodes/%{trusted.certname}.eyaml"
+#   - name: "Per-role data"
+#     paths:
+#       - "roles/%{trusted.extensions.pp_role}.eyaml"
 #   - name: "Common data"
 #     paths:
 #       - "common.eyaml"

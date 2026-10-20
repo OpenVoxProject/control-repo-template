@@ -13,6 +13,7 @@ with the minimum scaffolding needed to get started managing infrastructure with
 * [Working With Site Modules](#working-with-site-modules)
 * [OpenBolt Project](#openbolt-project)
 * [Hiera and Plan Data](#hiera-and-plan-data)
+* [Classifying Nodes](#classifying-nodes)
 * [Using Another Git Server](#using-another-git-server)
 * [Credits](#credits)
 
@@ -22,7 +23,8 @@ with the minimum scaffolding needed to get started managing infrastructure with
 * An `adhoc` module for tasks and plans that do not fit into a specific role or profile.
 * Example Puppet language and Ruby functions with unit tests.
 * An example `Puppetfile` with various module references.
-* An example Hiera configuration file and data directory with a pre-created `common.yaml` and `nodes` directory,
+* An example Hiera configuration file and data directory with a pre-created `common.yaml`, a `nodes` directory,
+  and a `roles` directory that assigns each node its role from the `pp_role` certificate extension,
   including an OpenBolt `plan_hierarchy` example and commented eyaml configuration guidance.
 * An [environment.conf](https://docs.openvoxproject.org/openvox/latest/config_file_environment.html)
   that configures the site module path and `config_version` script.
@@ -73,6 +75,7 @@ control-repo/
 ├── data/                           # Hiera data directory.
 │   ├── nodes/                      # Node-specific data goes here.
 │   ├── plan/                       # OpenBolt plan data.
+│   ├── roles/                      # Per-role data: which role class a node gets.
 │   └── common.yaml                 # Common data goes here.
 ├── manifests/
 │   └── site.pp                     # Main manifest.
@@ -141,10 +144,11 @@ packaged and tested as a Puppet module.
 
 ## Hiera and Plan Data
 
-The root `hiera.yaml` includes the standard node and common data hierarchy:
+The root `hiera.yaml` includes the standard node, role, and common data hierarchy:
 
 ```text
 data/nodes/%{trusted.certname}.yaml
+data/roles/%{trusted.extensions.pp_role}.yaml
 data/common.yaml
 ```
 
@@ -157,6 +161,41 @@ The bottom of `hiera.yaml` contains a commented
 [eyaml](https://github.com/voxpupuli/hiera-eyaml) example for encrypted Hiera
 data, including the server gem installation command, key generation step, and a
 sample `eyaml_lookup_key` configuration.
+
+## Classifying Nodes
+
+Every node gets exactly one role class, chosen from Hiera data. The
+`roles/%{trusted.extensions.pp_role}.yaml` level of the hierarchy selects a data
+file by the node's `pp_role` certificate extension, that file names the role
+class under the `classes` key, and `manifests/site.pp` includes whatever the key
+resolves to:
+
+```puppet
+lookup('classes', Array[String], 'unique', ['role::soe']).include
+```
+
+Nodes with no role data get `role::soe`.
+
+To give a node a role, set `pp_role` in `csr_attributes.yaml` on the node before
+its first run, then sign its certificate as usual:
+
+```yaml
+# /etc/puppetlabs/puppet/csr_attributes.yaml
+---
+extension_requests:
+  pp_role: database_server
+```
+
+The CA copies the extension into the signed certificate, so a node cannot change
+its own role, and changing a node's role means issuing it a new certificate.
+With the extension above, `data/roles/database_server.yaml` assigns
+`role::example::database_server`. To add a role, add a class to
+`site-modules/role` and a matching file under `data/roles/`.
+
+If your provisioning process cannot write `csr_attributes.yaml`, use node
+definitions in `manifests/site.pp` instead; a commented example is there. The
+[roles and profiles example](https://docs.openvoxproject.org/openvox/latest/roles_and_profiles_example.html#assign-the-role-to-nodes)
+in the OpenVox documentation explains the options in more detail.
 
 ## Using Another Git Server
 

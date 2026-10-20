@@ -25,8 +25,18 @@ File { backup => false }
 # External Node Classifiers (ENCs), if one is configured.
 #
 # For more on node definitions, see: https://docs.openvoxproject.org/openvox/latest/lang_node_definitions.html
+# If your provisioning process cannot set certificate extensions, node
+# definitions matched by certname are the quickest alternative. They take
+# precedence over the default node:
+#
+#   node /^db\d+\.example\.com$/ {
+#     include role::example::database_server
+#   }
+
 node default {
-  # This is where you can declare classes for all nodes.
-  # Example:
-  #   class { 'my_class': }
+  # Include the role class named by the `classes` key in Hiera data. The
+  # hierarchy in hiera.yaml resolves it from the node's pp_role certificate
+  # extension (see data/roles/), so each node gets exactly one role. Nodes
+  # with no role data fall back to role::soe.
+  lookup('classes', Array[String], 'unique', ['role::soe']).include
 }
