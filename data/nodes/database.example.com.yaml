@@ -1,5 +1,4 @@
 ---
 # We will not manage the package in this example, but we will manage the service.
-profile::example::postgresql:
-  manage_package: false
-  manage_service: true
+profile::example::postgresql::manage_package: false
+profile::example::postgresql::manage_service: true

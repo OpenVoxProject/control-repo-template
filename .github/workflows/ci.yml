@@ -39,7 +39,7 @@ jobs:
       - name: Validate YAML files
         run: |
           ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f, aliases: true) }' \
-            hiera.yaml data/common.yaml data/nodes/*.yaml data/plan/*.yaml \
+            hiera.yaml data/common.yaml data/nodes/*.yaml data/roles/*.yaml data/plan/*.yaml \
             bolt/bolt-project.yaml bolt/inventory.yaml
 
   adhoc:

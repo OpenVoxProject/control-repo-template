@@ -1,0 +1,5 @@
+---
+# Nodes whose certificate carries the extension pp_role=database_server get this
+# role. Keep one role class per file so that each node has exactly one role.
+classes:
+  - role::example::database_server
